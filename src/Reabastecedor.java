@@ -1,21 +1,42 @@
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.Map;
 
-public class Reabastecedor {
-    private Estoque estoque;
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+public class Estoque {
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private Map<String, Integer> produtos;
 
-    public Reabastecedor(Estoque estoque) {
-        this.estoque = estoque;
+    public Estoque(Map<String, Integer> produtosIniciais) {
+        this.produtos = produtosIniciais;
     }
 
-    public void iniciarReabastecimento(long intervalo, TimeUnit unidade) {
-        scheduler.scheduleAtFixedRate(this::reabastecer, 0, intervalo, unidade);
+    public void reabastecerEstoque(int quantidade) {
+        lock.writeLock().lock();
+        try {
+            for (Map.Entry<String, Integer> entry : produtos.entrySet()) {
+                String produto = entry.getKey();
+                int quantidadeAtual = entry.getValue();
+                produtos.put(produto, quantidadeAtual + quantidade); // Reabastece
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
-    private void reabastecer() {
-        System.out.println("Reabastecendo o estoque...");
-        // Adicione a lógica de reabastecimento
+    public boolean verificarDisponibilidade(String produto, int quantidade) {
+        lock.readLock().lock();
+        try {
+            return produtos.getOrDefault(produto, 0) >= quantidade;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public void atualizarEstoque(String produto, int quantidade) {
+        lock.writeLock().lock();
+        try {
+            produtos.put(produto, produtos.get(produto) - quantidade);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 }
