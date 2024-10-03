@@ -9,7 +9,6 @@ public class GeradorRelatorio implements Runnable {
 
     @Override
     public void run() {
-        // Implemente a lógica para gerar o relatório
         System.out.println("Gerando relatório...");
     }
 }
