@@ -1,41 +1,43 @@
 public class PedidoWorker implements Runnable {
-    private PedidoQueue fila;
+    private PedidoQueue pedidoQueue;
     private Estoque estoque;
+    private RelatorioVendas relatorioVendas;
 
-    public PedidoWorker(PedidoQueue fila, Estoque estoque) {
-        this.fila = fila;
+    public PedidoWorker(PedidoQueue pedidoQueue, Estoque estoque, RelatorioVendas relatorioVendas) {
+        this.pedidoQueue = pedidoQueue;
         this.estoque = estoque;
+        this.relatorioVendas = relatorioVendas;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                Pedido pedido = fila.pegarPedido();
-                processarPedido(pedido);
+                Pedido pedido = pedidoQueue.obterPedido();
+                System.out.println("Processando pedido: " + pedido);
+
+                boolean pedidoValido = true;
+                for (ItemPedido item : pedido.getItens()) {
+                    if (!estoque.verificarDisponibilidade(item.getProduto(), item.getQuantidade())) {
+                        pedidoValido = false;
+                        break;
+                    }
+                }
+
+                if (pedidoValido) {
+                    for (ItemPedido item : pedido.getItens()) {
+                        estoque.atualizarEstoque(item.getProduto(), item.getQuantidade());
+                    }
+                    relatorioVendas.registrarPedidoProcessado(pedido.calcularValorTotal());
+                    System.out.println("Pedido processado com sucesso: " + pedido);
+                } else {
+                    relatorioVendas.registrarPedidoRejeitado();
+                    System.out.println("Pedido rejeitado: " + pedido);
+                }
+
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                e.printStackTrace();
             }
-        }
-    }
-
-    private void processarPedido(Pedido pedido) {
-        boolean todosDisponiveis = true;
-
-        for (Item item : pedido.getItens()) {
-            if (!estoque.verificarDisponibilidade(item.getNome(), item.getQuantidade())) {
-                todosDisponiveis = false;
-                break;
-            }
-        }
-
-        if (todosDisponiveis) {
-            for (Item item : pedido.getItens()) {
-                estoque.atualizarEstoque(item.getNome(), item.getQuantidade());
-            }
-            System.out.println("Pedido processado: " + pedido);
-        } else {
-            System.out.println("Pedido rejeitado: " + pedido);
         }
     }
 }

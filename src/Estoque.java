@@ -15,7 +15,7 @@ public class Estoque {
             for (Map.Entry<String, Integer> entry : produtos.entrySet()) {
                 String produto = entry.getKey();
                 int quantidadeAtual = entry.getValue();
-                produtos.put(produto, quantidadeAtual + quantidade); // Reabastece
+                produtos.put(produto, quantidadeAtual + quantidade);
             }
             System.out.println("Estoque reabastecido com " + quantidade + " unidades de cada produto.");
         } finally {
